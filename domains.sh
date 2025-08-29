@@ -1,52 +1,47 @@
 #!/bin/bash
-
-    clear
-    echo -e "\033[96;1m =============================== \033[0m"
-    echo -e "\033[96;1m    MEMBUAT DOMAINS UNTUK VPS    \033[0m"    
-    echo -e "\033[96;1m =============================== \033[0m"    
-    IP=$(curl -sS ipv4.icanhazip.com)
-    DOMAIN=aryanet.biz.id
-    sub=$(head /dev/urandom | tr -dc a-z0-9 | head -c 8)
-    dns=${sub}.${DOMAIN}
-    CF_KEY=8ac7cc64b17616bc45c5117d6847f197b7763
-    CF_ID=Arista15oye@gmail.com
-    set -euo pipefail
-    echo ""
-    echo "Proses Pointing Domain ${dns}..."
-    sleep 1
-    ZONE=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}&status=active" \
-         -H "X-Auth-Email: ${CF_ID}" \
-         -H "X-Auth-Key: ${CF_KEY}" \
-         -H "Content-Type: application/json" | jq -r .result[0].id)
-
-    RECORD=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records?name=${dns}" \
-         -H "X-Auth-Email: ${CF_ID}" \
-         -H "X-Auth-Key: ${CF_KEY}" \
-         -H "Content-Type: application/json" | jq -r .result[0].id)
-
-    if [[ "${#RECORD}" -le 10 ]]; then
-         RECORD=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
-         -H "X-Auth-Email: ${CF_ID}" \
-         -H "X-Auth-Key: ${CF_KEY}" \
-         -H "Content-Type: application/json" \
-         --data '{"type":"A","name":"'${dns}'","content":"'${IP}'","ttl":120,"proxied":true}' | jq -r .result.id)
-    fi
-
-    RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records/${RECORD}" \
-         -H "X-Auth-Email: ${CF_ID}" \
-         -H "X-Auth-Key: ${CF_KEY}" \
-         -H "Content-Type: application/json" \
-         --data '{"type":"A","name":"'${dns}'","content":"'${IP}'","ttl":120,"proxied":true}')
-
-    # Menyimpan domain ke /etc/xray/domain hanya jika tidak ada
-    echo "$dns" > /etc/xray/domain
-    clear
-
-    echo -e "\033[96m================================\033[0m"    
-    echo -e "\e[96;1mYOUR DOMAIN:\e[0m ${dns}"
-    echo -e "\033[96m================================\033[0m"    
-rm -rf /etc/xray/domain 
-
-goblox="${dns}" 
-echo "${goblox}" > /etc/xray/domain
+#random
+apt install jq curl -y
+rm -rf /root/xray/scdomain
+mkdir -p /root/xray
 clear
+echo ""
+echo ""
+echo ""
+#sub=$(</dev/urandom tr -dc a-z0-9 | head -c3)
+read -rp "Masukin Nama Contoh (Kamu-Anjing) : " -e sub
+DOMAIN=aryanet.biz.id
+SUB_DOMAIN=${sub}.nbc-aryanet.biz.id
+CF_ID=Arista15oye@gmail.com
+CF_KEY=8ac7cc64b17616bc45c5117d6847f197b7763
+set -euo pipefail
+IP=$(curl -sS ifconfig.me);
+echo "Updating DNS for ${SUB_DOMAIN}..."
+ZONE=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones?name=${DOMAIN}&status=active" \
+-H "X-Auth-Email: ${CF_ID}" \
+-H "X-Auth-Key: ${CF_KEY}" \
+-H "Content-Type: application/json" | jq -r .result[0].id)
+RECORD=$(curl -sLX GET "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records?name=${SUB_DOMAIN}" \
+-H "X-Auth-Email: ${CF_ID}" \
+-H "X-Auth-Key: ${CF_KEY}" \
+-H "Content-Type: application/json" | jq -r .result[0].id)
+if [[ "${#RECORD}" -le 10 ]]; then
+RECORD=$(curl -sLX POST "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records" \
+-H "X-Auth-Email: ${CF_ID}" \
+-H "X-Auth-Key: ${CF_KEY}" \
+-H "Content-Type: application/json" \
+--data '{"type":"A","name":"'${SUB_DOMAIN}'","content":"'${IP}'","ttl":120,"proxied":false}' | jq -r .result.id)
+fi
+RESULT=$(curl -sLX PUT "https://api.cloudflare.com/client/v4/zones/${ZONE}/dns_records/${RECORD}" \
+-H "X-Auth-Email: ${CF_ID}" \
+-H "X-Auth-Key: ${CF_KEY}" \
+-H "Content-Type: application/json" \
+--data '{"type":"A","name":"'${SUB_DOMAIN}'","content":"'${IP}'","ttl":120,"proxied":false}')
+
+echo "$SUB_DOMAIN" > /root/domain
+echo "$SUB_DOMAIN" > /root/scdomain
+echo "$SUB_DOMAIN" > /etc/xray/domain
+echo "$SUB_DOMAIN" > /etc/v2ray/domain
+echo "$SUB_DOMAIN" > /etc/xray/scdomain
+echo "IP=$SUB_DOMAIN" > /var/lib/aryapro/ipvps.conf
+rm -rf cf
+sleep 1
