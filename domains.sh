@@ -42,6 +42,6 @@ echo "$SUB_DOMAIN" > /root/scdomain
 echo "$SUB_DOMAIN" > /etc/xray/domain
 echo "$SUB_DOMAIN" > /etc/v2ray/domain
 echo "$SUB_DOMAIN" > /etc/xray/scdomain
-echo "IP=$SUB_DOMAIN" > /var/lib/aryapro/ipvps.conf
+echo "IP=$SUB_DOMAIN" > /var/AR/aryapro/ipvps.conf
 rm -rf cf
 sleep 1
