@@ -49,41 +49,6 @@ else
     exit 1
 fi
 
-if [[ ${ID} == "ubuntu" || ${ID} == "debian" ]]; then
-    echo -ne
-else
-    echo -e " ${r}This Script only Support for OS"
-    echo -e ""
-    echo -e " - ${y}Ubuntu 20.04${NC}"
-    echo -e " - ${y}Ubuntu 21.04${NC}"
-    echo -e " - ${y}Ubuntu 22.04${NC}"
-    echo -e " - ${y}Ubuntu 23.04${NC}"
-    echo -e " - ${y}Ubuntu 24.04${NC}"
-    echo ""
-    echo -e " - ${y}Debian 10${NC}"
-    echo -e " - ${y}Debian 11${NC}"
-    echo -e " - ${y}Debian 12${NC}"
-    Credit_Sc
-    exit 0
-fi
-
-if [[ ${VERSION_ID} == "10" || ${VERSION_ID} == "11" || ${VERSION_ID} == "12" || ${VERSION_ID} == "20.04" || ${VERSION_ID} == "21.04" || ${VERSION_ID} == "22.04" || ${VERSION_ID} == "23.04" || ${VERSION_ID} == "24.04" ]]; then
-    echo -ne
-else
-    echo -e " ${r}This Script only Support for OS"
-    echo -e ""
-    echo -e " - ${y}Ubuntu 20.04${NC}"
-    echo -e " - ${y}Ubuntu 21.04${NC}"
-    echo -e " - ${y}Ubuntu 22.04${NC}"
-    echo -e " - ${y}Ubuntu 23.04${NC}"
-    echo -e " - ${y}Ubuntu 24.04${NC}"
-    echo ""
-    echo -e " - ${y}Debian 10${NC}"
-    echo -e " - ${y}Debian 11${NC}"
-    echo -e " - ${y}Debian 12${NC}"
-    Credit_Sc
-    exit 0
-fi
 
 if [ "$(systemd-detect-virt)" == "openvz" ]; then
 echo "OpenVZ is not supported"
