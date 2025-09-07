@@ -39,16 +39,15 @@ export ISP=$(cat /root/.isp);
 export CITY=$(cat /root/.city);
 source /etc/os-release
 
+function lane_atas() {
+echo -e "${c}┌──────────────────────────────────────────┐${NC}"
+}
+function lane_bawah() {
+echo -e "${c}└──────────────────────────────────────────┘${NC}"
+}
+
+
 checking_sc
-
-function ARCHITECTURE() {
-if [[ "$( uname -m | awk '{print $1}' )" == "x86_64" ]]; then
-    echo -ne
-else
-    echo -e "${r} Your Architecture Is Not Supported ( ${y}$( uname -m )${NC} )"
-    exit 1
-fi
-
 
 if [ "$(systemd-detect-virt)" == "openvz" ]; then
 echo "OpenVZ is not supported"
@@ -57,7 +56,7 @@ fi
 }
 
 # call
-ARCHITECTURE
+
 
 function MakeDirectories() {
     # Direktori utama
@@ -66,8 +65,8 @@ function MakeDirectories() {
         "/etc/vmess" "/etc/vless" "/etc/trojan" "/etc/ssh" 
     )
     
-    local lunatic_subdirs=("vmess" "vless" "trojan" "ssh" "bot")
-    local lunatic_types=("backup" "notif" "usage" "ip" "detail")
+    local aryapro_subdirs=("vmess" "vless" "trojan" "ssh" "bot")
+    local aryapro_types=("backup" "notif" "usage" "ip" "detail")
 
     local protocols=("vmess" "vless" "trojan" "ssh")
 
@@ -218,7 +217,7 @@ INSTALL_BACKUP() {
 apt install rclone &> /dev/null
 printf "q\n" | rclone config &> /dev/null
 wget -O /root/.config/rclone/rclone.conf "https://github.com/kayu55/os/raw/main/rclone.conf" &> /dev/null
-git clone  https://github.com/kayu55/wondershaper.git &> /dev/null
+git clone  https://github.com/magnific0/wondershaper.git &> /dev/null
 cd wondershaper
 make install &> /dev/null
 cd
@@ -228,13 +227,8 @@ rm -f /root/set-br.sh
 rm -f /root/limit.sh
 }
 
-INSTALL_OHP() {
-wget https://raw.githubusercontent.com/kayu55/os/main/ws/ohp.sh &> /dev/null
-chmod +x ohp.sh && ./ohp.sh &> /dev/null
-}
-
 INSTALL_FEATURE() {
-wget https://raw.githubusercontent.com/kayu55/os/main/menu/install_menu.sh &> /dev/null
+wget https://raw.githubusercontent.com/kayu55/os//main/menu/install_menu.sh &> /dev/null
 chmod +x install_menu.sh && ./install_menu.sh &> /dev/null
 }
 
@@ -283,13 +277,6 @@ lane_atas
 echo -e "${c}│       ${g}PROCESS INSTALLED BACKUP MENU${NC}${c}      │${NC}"
 lane_bawah
 INSTALL_BACKUP
-echo ""
-
-lane_atas
-echo -e "${c}│           ${g}PROCESS INSTALLED OHP${NC}${c}          │${NC}"
-lane_bawah
-INSTALL_OHP
-echo ""
 
 lane_atas
 echo -e "${c}│           ${g}DOWNLOAD EXTRA MENU${NC}${c}            │${NC}"
@@ -333,12 +320,6 @@ lane_atas
 echo -e "${c}│       ${g}PROCESS INSTALLED BACKUP MENU${NC}${c}      │${NC}"
 lane_bawah
 INSTALL_BACKUP
-echo ""
-
-lane_atas
-echo -e "${c}│           ${g}PROCESS INSTALLED OHP${NC}${c}          │${NC}"
-lane_bawah
-INSTALL_OHP
 echo ""
 
 lane_atas
@@ -441,10 +422,7 @@ curl -s ipinfo.io/org?token=44ae7fd0b5d0d5  | cut -d " " -f 2-10 >> /etc/xray/is
 rm -f /root/*.sh
 rm -f /root/*.txt
 
-clear
-#GANTI PASSWORD DEFAULT
-restart_system(){
-#IZIN SCRIPT
+function SENDER_NOTIFICATION() {
 MYIP=$(curl -sS ipv4.icanhazip.com)
 echo -e "\e[32mloading...\e[0m" 
 clear
@@ -464,7 +442,7 @@ MYIP=$(curl -sS ipv4.icanhazip.com)
 
 TEXT="
 <code>━━━━━━━━━━━━━━━━━━━━</code>
-<code>⚠️ AUTOSCRIPT ST-PUSAT ALL OS 2025 ⚠️</code>
+<code>⚠️ AUTOSCRIPT ALL OS RELEY ⚠️</code>
 <code>━━━━━━━━━━━━━━━━━━━━</code>
 <code>TIME : </code><code>${TIME} WIB</code>
 <code>DOMAIN : </code><code>${domain}</code>
@@ -478,7 +456,6 @@ TEXT="
 
     curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 }
-clear
 
 rm ~/.bash_history
 rm -f openvpn
